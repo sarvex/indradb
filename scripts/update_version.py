@@ -10,7 +10,7 @@ VERSION_MATCHER = re.compile(r'^version = "([^"]+)\.([^"]+)\.([^"]+)"$')
 VERSIONED_CATEGORIES = {"[package]", "[dependencies.indradb-lib]", "[dependencies.indradb-proto]"}
 
 def run(args, cwd="."):
-    print("%s => %s" % (cwd, args))
+    print(f"{cwd} => {args}")
     subprocess.check_call(args, cwd=cwd)
 
 def update_version(path, new_version):
@@ -23,12 +23,10 @@ def update_version(path, new_version):
         if line.startswith("["):
             in_appropriate_category = line in VERSIONED_CATEGORIES
         elif in_appropriate_category:
-            match = VERSION_MATCHER.match(line)
-
-            if match:
-                old_version = tuple([int(x) for x in match.groups()])
+            if match := VERSION_MATCHER.match(line):
+                old_version = tuple(int(x) for x in match.groups())
                 assert new_version > old_version, "New version should be greater than the old version"
-                contents[i] = 'version = "{}"'.format(".".join(str(x) for x in new_version))
+                contents[i] = f'version = "{".".join(str(x) for x in new_version)}"'
 
     with open(path, "w") as f:
         f.write("\n".join(contents))
@@ -38,7 +36,7 @@ def main():
         raise Exception("No version specified")
 
     try:
-        new_version = tuple([int(x) for x in sys.argv[1].split(".")])
+        new_version = tuple(int(x) for x in sys.argv[1].split("."))
         assert len(new_version) == 3
     except:
         raise Exception("Invalid version specification")
@@ -51,7 +49,7 @@ def main():
     run(["make", "check", "test"])
 
     # a github action will pickup this tag push and create a release
-    new_version_str = "v{}".format(".".join(str(x) for x in new_version))
+    new_version_str = f'v{".".join(str(x) for x in new_version)}'
     run(["git", "commit", "-a", "-m", new_version_str])
     run(["git", "tag", "-a", new_version_str, "-m", new_version_str])
     run(["git", "push", "origin", new_version_str])
